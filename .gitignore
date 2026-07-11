@@ -44,6 +44,9 @@ app.*.map.json
 
 # Local properties
 android/local.properties
+/android/.gradle/
+/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+/flutter_01.png
 
 # 签名密钥与密码（绝不提交到版本库！）
 android/key.properties
