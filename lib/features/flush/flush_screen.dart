@@ -27,6 +27,7 @@ class FlushScreen extends ConsumerStatefulWidget {
 
 class _FlushScreenState extends ConsumerState<FlushScreen> {
   late TextEditingController _pfCtrl;
+  bool _pfInvalid = false;
 
   StateProvider<double> get _pfProvider =>
       widget.pfProvider ?? pfAmountProvider;
@@ -68,7 +69,16 @@ class _FlushScreenState extends ConsumerState<FlushScreen> {
             const SizedBox(height: 16),
             _buildInputCard(),
             const SizedBox(height: 16),
-            _buildComparisonCard(result, savedInterest, savedMonths),
+            if (_pfInvalid)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('请先输入有效的每月公积金额度,才能显示对比结果。',
+                      style: TextStyle(fontSize: 13, color: Colors.grey)),
+                ),
+              )
+            else
+              _buildComparisonCard(result, savedInterest, savedMonths),
           ],
         ),
       ),
@@ -137,17 +147,20 @@ class _FlushScreenState extends ConsumerState<FlushScreen> {
                     controller: _pfCtrl,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.right,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       suffixText: '元',
                       isDense: true,
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      errorText: _pfInvalid ? '请输入 ≥ 0 的金额' : null,
                     ),
+                    // 0 合法(等于不冲);负数、非数字不写进计算,而是标错并暂停展示结果,
+                    // 免得输入框显示一个数、下面却按上一个有效值在算
                     onChanged: (v) {
-                      final amount = double.tryParse(v);
-                      if (amount != null && amount > 0) {
-                        ref.read(_pfProvider.notifier).state = amount;
-                      }
+                      final amount = double.tryParse(v.trim());
+                      final valid = amount != null && amount.isFinite && amount >= 0;
+                      setState(() => _pfInvalid = !valid);
+                      if (valid) ref.read(_pfProvider.notifier).state = amount;
                     },
                   ),
                 ),
